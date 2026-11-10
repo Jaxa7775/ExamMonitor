@@ -1,0 +1,15 @@
+# Maxfiy sozlamalar (token) — o'rniga config.example.ini bor
+config.ini
+
+# Imtihon jurnallari (talabalar ma'lumotlari)
+logs/
+*.csv
+
+# PyInstaller natijalari
+build/
+dist/
+*.exe
+
+# Python
+__pycache__/
+*.py[cod]
