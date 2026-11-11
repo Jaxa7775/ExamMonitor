@@ -13,3 +13,6 @@ dist/
 # Python
 __pycache__/
 *.py[cod]
+
+# Bulutli klient maxfiy sozlamasi
+cloud_client/config.ini

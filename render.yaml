@@ -1,0 +1,15 @@
+# Render.com uchun deploy sozlamalari (bepul versiya)
+# Render bu faylni avtomatik o'qiydi: "Blueprint" orqali deploy qiling.
+services:
+  - type: web
+    name: exammonitor
+    runtime: python
+    plan: free
+    rootDir: cloud
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "python server.py"
+    envVars:
+      - key: EXAM_TOKEN
+        sync: false        # Render panelida qo'lda kiritasiz (maxfiy token)
+      - key: PYTHON_VERSION
+        value: "3.12.7"

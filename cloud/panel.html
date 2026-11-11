@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Imtihon nazorati — O'qituvchi paneli</title>
+<style>
+  :root{
+    --bg:#0f1420; --panel:#171e2e; --panel2:#1e2740; --line:#2a3550;
+    --text:#e7ecf5; --muted:#8e9bb5; --accent:#4f7cff; --accent2:#3a62d8;
+    --ok:#1f8f4e; --okbg:#10361f; --bad:#c0392b; --badbg:#3a1512; --warn:#e0a800;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+  header{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+  header h1{font-size:16px;margin:0;font-weight:700;white-space:nowrap}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--bad);display:inline-block}
+  .dot.on{background:var(--ok)}
+  input,button,select{font:inherit}
+  input[type=text],input[type=password]{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:7px;padding:7px 10px;outline:none}
+  input::placeholder{color:var(--muted)}
+  button{background:var(--accent);border:none;color:#fff;border-radius:7px;padding:7px 12px;cursor:pointer;font-weight:600}
+  button:hover{background:var(--accent2)}
+  button.ghost{background:var(--panel2);border:1px solid var(--line)}
+  button.ghost:hover{background:var(--line)}
+  button.danger{background:var(--bad)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .spacer{flex:1}
+  .wrap{padding:14px 16px}
+  .setup{max-width:460px;margin:8vh auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px}
+  .setup h2{margin:0 0 4px}
+  .setup p{color:var(--muted);margin:0 0 18px;font-size:13px;line-height:1.5}
+  .setup label{display:block;margin:12px 0 4px;color:var(--muted);font-size:12px}
+  .setup input{width:100%}
+  .setup button{width:100%;margin-top:18px;padding:11px}
+  .filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px;background:var(--panel);padding:10px 12px;border-radius:10px;border:1px solid var(--line)}
+  .filters label{color:var(--muted);font-size:12px}
+  .tabs{display:flex;gap:6px;margin-bottom:12px}
+  .tab{padding:7px 16px;border-radius:8px;background:var(--panel2);cursor:pointer;color:var(--muted);border:1px solid var(--line)}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border-radius:10px;overflow:hidden}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px}
+  th{background:var(--panel2);color:var(--muted);font-weight:600;position:sticky;top:0}
+  tr.sel td{background:#22304f}
+  tr.bad td{background:var(--badbg)}
+  tr.bad.sel td{background:#4a1d19}
+  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+  .badge.ok{background:var(--okbg);color:#5fd98a}
+  .badge.bad{background:var(--badbg);color:#ff8a7a}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+  .cell{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer}
+  .cell.sel{outline:2px solid var(--accent)}
+  .cell.bad{border-color:var(--bad)}
+  .cell .ph{width:100%;aspect-ratio:16/10;background:#000;object-fit:contain;display:block}
+  .cell .cap{padding:6px 9px;font-size:12px;display:flex;justify-content:space-between;align-items:center;gap:6px}
+  .cell .cap .nm{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .toolbar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+  .count{color:var(--muted);font-size:12px;margin-left:4px}
+  .empty{color:var(--muted);text-align:center;padding:50px;font-size:15px}
+  .log{margin-top:14px;background:#0b0f18;border:1px solid var(--line);border-radius:10px;padding:10px;height:150px;overflow:auto;font-family:ui-monospace,Consolas,monospace;font-size:12px;color:#b9c4db}
+  .log .warnln{color:#ffb3a7}
+  /* Modal (boshqaruv / katta ekran) */
+  .modal{position:fixed;inset:0;background:rgba(5,8,15,.86);display:none;align-items:center;justify-content:center;z-index:50}
+  .modal.show{display:flex}
+  .modal .box{background:var(--panel);border:1px solid var(--line);border-radius:12px;max-width:94vw;max-height:94vh;display:flex;flex-direction:column;overflow:hidden}
+  .modal .bar{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--panel2);border-bottom:1px solid var(--line)}
+  .modal .bar .t{font-weight:700}
+  .modal img{max-width:90vw;max-height:80vh;display:block;background:#000}
+  .modal .ctl{outline:none;cursor:crosshair}
+  .hint{color:var(--muted);font-size:12px;padding:6px 12px;background:var(--panel2);border-top:1px solid var(--line)}
+  @media(max-width:600px){header h1{font-size:14px}.wrap{padding:10px}}
+</style>
+</head>
+<body>
+
+<!-- ========== ULANISH OYNASI ========== -->
+<div id="setup" class="setup">
+  <h2>Imtihon nazorati</h2>
+  <p>O'qituvchi paneliga kirish. Token va sinf kodi talaba kompyuterlaridagi bilan bir xil bo'lishi kerak.</p>
+  <label>Maxfiy token</label>
+  <input id="s_token" type="password" placeholder="masalan: sinf-7a-maxfiy" autocomplete="off">
+  <label>Sinf kodi (room)</label>
+  <input id="s_room" type="text" placeholder="masalan: 7-A" autocomplete="off">
+  <button id="s_go">Ulanish</button>
+  <p id="s_err" style="color:#ff8a7a;margin-top:12px;display:none"></p>
+</div>
+
+<!-- ========== ASOSIY PANEL ========== -->
+<div id="main" style="display:none">
+<header>
+  <span id="dot" class="dot"></span>
+  <h1>Imtihon nazorati</h1>
+  <span class="count" id="roomlbl"></span>
+  <span class="spacer"></span>
+  <span class="count"><span id="cnt">0</span> ta talaba ulangan</span>
+  <button class="ghost" id="disc">Chiqish</button>
+</header>
+
+<div class="wrap">
+  <div class="filters">
+    <label>Ruxsat etilgan (kalit so'zlar):</label>
+    <input type="text" id="allow" placeholder="moodle, exam" style="width:200px">
+    <label>Bloklangan:</label>
+    <input type="text" id="block" placeholder="youtube, telegram" style="width:200px">
+    <button class="ghost" id="savef">Saqlash</button>
+    <label style="margin-left:8px"><input type="checkbox" id="snd" checked> Ovozli ogohlantirish</label>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="list">Ro'yxat / Nazorat</div>
+    <div class="tab" data-tab="screens">Ekranlar</div>
+  </div>
+
+  <div class="toolbar">
+    <button id="b_lock_sel" class="ghost">🔒 Tanlangan</button>
+    <button id="b_lock_all" class="danger">🔒 Hammasi</button>
+    <button id="b_unlock_sel" class="ghost">🔓 Tanlangan</button>
+    <button id="b_unlock_all" class="ghost">🔓 Hammasi</button>
+    <button id="b_control" class="ghost">🖱 Boshqarish</button>
+    <button id="b_msg_sel" class="ghost">✉ Xabar (tanlangan)</button>
+    <button id="b_msg_all" class="ghost">✉ Xabar (hammaga)</button>
+    <button id="b_all" class="ghost">Hammasini belgilash</button>
+    <button id="b_none" class="ghost">Bekor</button>
+  </div>
+
+  <!-- Ro'yxat -->
+  <div id="view_list">
+    <table>
+      <thead><tr>
+        <th style="width:30px"></th><th>Talaba / Kompyuter</th><th>Faol oyna</th>
+        <th>URL / sayt</th><th>Dastur</th><th style="width:100px">Holat</th>
+      </tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div id="empty1" class="empty">Hali hech kim ulanmagan. Talaba kompyuterlarida klientni ishga tushiring.</div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <!-- Ekranlar -->
+  <div id="view_screens" style="display:none">
+    <div class="grid" id="grid"></div>
+    <div id="empty2" class="empty">Hali hech kim ulanmagan.</div>
+  </div>
+</div>
+</div>
+
+<!-- ========== KATTA EKRAN / BOSHQARUV MODAL ========== -->
+<div class="modal" id="modal">
+  <div class="box">
+    <div class="bar">
+      <span class="t" id="m_title"></span>
+      <span class="spacer" style="flex:1"></span>
+      <span id="m_mode" class="count"></span>
+      <button class="ghost" id="m_close">Yopish</button>
+    </div>
+    <img id="m_img" alt="ekran">
+    <div class="hint" id="m_hint"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+let ws=null, TOKEN="", ROOM="";
+const students = new Map();   // sid -> {sid,name,window,app,url,ok,shot}
+const selected = new Set();
+let allow=[], block=[];
+let activeTab="list";
+let control = {sid:null, active:false};   // masofadan boshqaruv holati
+
+// ---------- Ulanish ----------
+$("s_go").onclick = connect;
+$("s_room").addEventListener("keydown", e=>{ if(e.key==="Enter") connect(); });
+
+function connect(){
+  TOKEN = $("s_token").value.trim();
+  ROOM  = $("s_room").value.trim();
+  if(!TOKEN || !ROOM){ showErr("Token va sinf kodini kiriting."); return; }
+  const proto = location.protocol==="https:" ? "wss" : "ws";
+  const url = `${proto}://${location.host}/ws/teacher?token=${encodeURIComponent(TOKEN)}&room=${encodeURIComponent(ROOM)}`;
+  ws = new WebSocket(url);
+  ws.onopen = ()=>{ $("dot").classList.add("on"); };
+  ws.onclose = ()=>{
+    $("dot").classList.remove("on");
+    if($("main").style.display==="none"){ showErr("Ulanib bo'lmadi. Token/kod yoki server manzilini tekshiring."); }
+    else { logline("Server bilan aloqa uzildi — qayta ulanmoqda..."); setTimeout(reconnect,3000); }
+  };
+  ws.onmessage = ev => handle(JSON.parse(ev.data));
+}
+function reconnect(){ if(ws && ws.readyState<=1) return; connect(); }
+function showErr(t){ const e=$("s_err"); e.textContent=t; e.style.display="block"; }
+
+// ---------- Kiruvchi xabarlar ----------
+function handle(m){
+  switch(m.type){
+    case "error":
+      showErr("Ruxsat yo'q: token yoki sinf kodi noto'g'ri."); ws.close(); break;
+    case "roster":
+      enterMain();
+      students.clear();
+      m.students.forEach(s=>{ s.ok=classify(s); students.set(s.sid,s); });
+      renderAll(); break;
+    case "join":
+      enterMain();
+      m.ok=classify(m); students.set(m.sid,m);
+      logline(`ULANDI: ${m.name}`); renderAll(); break;
+    case "leave":
+      { const s=students.get(m.sid); if(s) logline(`UZILDI: ${s.name}`); }
+      students.delete(m.sid); selected.delete(m.sid);
+      if(control.sid===m.sid) closeModal();
+      renderAll(); break;
+    case "status":
+      { const s=students.get(m.sid); if(!s) break;
+        const wasOk=s.ok;
+        s.window=m.window; s.app=m.app; s.url=m.url; s.ok=classify(s);
+        if(wasOk && !s.ok){
+          logline(`⚠ OGOHLANTIRISH — ${s.name}: ${s.window} ${s.url} [${s.app}]`, true);
+          if($("snd").checked) beep();
+        }
+        renderRow(s); renderCell(s);
+      } break;
+    case "screenshot":
+      { const s=students.get(m.sid); if(!s) break;
+        s.shot = "data:image/jpeg;base64,"+m.data;
+        updateShot(s);
+      } break;
+  }
+}
+
+function enterMain(){
+  if($("main").style.display!=="none") return;
+  $("setup").style.display="none"; $("main").style.display="block";
+  $("roomlbl").textContent = "Sinf: "+ROOM;
+}
+
+// ---------- Tasniflash (ruxsat/blok) ----------
+function classify(s){
+  const hay = ((s.window||"")+" "+(s.app||"")+" "+(s.url||"")).toLowerCase();
+  if(block.length && block.some(b=>hay.includes(b))) return false;
+  if(allow.length && !allow.some(a=>hay.includes(a))) return false;
+  return true;
+}
+$("savef").onclick = ()=>{
+  allow = $("allow").value.toLowerCase().split(",").map(x=>x.trim()).filter(Boolean);
+  block = $("block").value.toLowerCase().split(",").map(x=>x.trim()).filter(Boolean);
+  students.forEach(s=> s.ok=classify(s));
+  renderAll();
+  logline(`Filtr saqlandi. Ruxsat: ${allow.join(", ")||"cheklovsiz"} | Blok: ${block.join(", ")||"yo'q"}`);
+};
+
+// ---------- Tablar ----------
+document.querySelectorAll(".tab").forEach(t=>{
+  t.onclick = ()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active"); activeTab=t.dataset.tab;
+    $("view_list").style.display = activeTab==="list"?"block":"none";
+    $("view_screens").style.display = activeTab==="screens"?"block":"none";
+  };
+});
+
+// ---------- Render ----------
+function renderAll(){
+  $("cnt").textContent = students.size;
+  $("empty1").style.display = students.size? "none":"block";
+  $("empty2").style.display = students.size? "none":"block";
+  const tb=$("tbody"); tb.innerHTML="";
+  const grid=$("grid"); grid.innerHTML="";
+  [...students.values()].sort((a,b)=>a.name.localeCompare(b.name)).forEach(s=>{
+    tb.appendChild(buildRow(s));
+    grid.appendChild(buildCell(s));
+    if(s.shot) updateShot(s);
+  });
+}
+function buildRow(s){
+  const tr=document.createElement("tr");
+  tr.id="row-"+s.sid;
+  tr.innerHTML = `<td><input type="checkbox" ${selected.has(s.sid)?"checked":""}></td>
+    <td>${esc(s.name)}</td><td>${esc(s.window)}</td><td>${esc(s.url)}</td>
+    <td>${esc(s.app)}</td><td></td>`;
+  tr.querySelector("input").onclick = e=>{ toggleSel(s.sid, e.target.checked); e.stopPropagation(); };
+  tr.onclick = ()=> toggleSel(s.sid, !selected.has(s.sid));
+  paintRow(tr,s);
+  return tr;
+}
+function renderRow(s){ const old=$("row-"+s.sid); if(old) old.replaceWith(buildRow(s)); }
+function paintRow(tr,s){
+  tr.className = (selected.has(s.sid)?"sel ":"")+(s.ok?"":"bad");
+  tr.lastElementChild.innerHTML = s.ok
+    ? '<span class="badge ok">OK</span>'
+    : '<span class="badge bad">⚠ SHUBHALI</span>';
+}
+function buildCell(s){
+  const d=document.createElement("div");
+  d.className="cell "+(selected.has(s.sid)?"sel ":"")+(s.ok?"":"bad");
+  d.id="cell-"+s.sid;
+  d.innerHTML = `<img class="ph" id="ph-${s.sid}" alt="">
+    <div class="cap"><span class="nm">${esc(s.name)}</span>
+    <span class="badge ${s.ok?"ok":"bad"}">${s.ok?"OK":"⚠"}</span></div>`;
+  d.onclick = ()=> toggleSel(s.sid, !selected.has(s.sid));
+  d.querySelector("img").ondblclick = e=>{ e.stopPropagation(); openBig(s.sid); };
+  return d;
+}
+function renderCell(s){ const old=$("cell-"+s.sid); if(old){ old.replaceWith(buildCell(s)); if(s.shot) updateShot(s);} }
+function updateShot(s){
+  const ph=$("ph-"+s.sid); if(ph && s.shot) ph.src=s.shot;
+  if(control.sid===s.sid || bigSid===s.sid){ $("m_img").src = s.shot; }
+}
+function toggleSel(sid,on){
+  if(on) selected.add(sid); else selected.delete(sid);
+  const s=students.get(sid); if(!s) return;
+  const tr=$("row-"+sid); if(tr) paintRow(tr,s);
+  const c=$("cell-"+sid); if(c) c.classList.toggle("sel",on);
+}
+$("b_all").onclick = ()=>{ students.forEach((_,sid)=>toggleSel(sid,true)); };
+$("b_none").onclick = ()=>{ [...selected].forEach(sid=>toggleSel(sid,false)); };
+
+// ---------- Buyruqlar ----------
+function send(obj){ if(ws&&ws.readyState===1) ws.send(JSON.stringify(obj)); }
+function selArr(){ return [...selected]; }
+
+function cmdToSel(type, extra={}){
+  const ids=selArr();
+  if(!ids.length){ alert("Avval talaba(lar)ni belgilang."); return; }
+  ids.forEach(sid=> send({type, sid, ...extra}));
+}
+$("b_lock_sel").onclick   = ()=> cmdToSel("lock",{message:"Kompyuter o'qituvchi tomonidan vaqtincha bloklandi."});
+$("b_lock_all").onclick   = ()=> send({type:"lock", all:true, message:"Kompyuter o'qituvchi tomonidan vaqtincha bloklandi."});
+$("b_unlock_sel").onclick = ()=> cmdToSel("unlock");
+$("b_unlock_all").onclick = ()=> send({type:"unlock", all:true});
+$("b_msg_sel").onclick = ()=>{ const t=prompt("Talabalarga xabar:"); if(t) cmdToSel("message",{text:t}); };
+$("b_msg_all").onclick = ()=>{ const t=prompt("Hamma talabaga xabar:"); if(t) send({type:"message",all:true,text:t}); };
+
+// ---------- Katta ekran (faqat ko'rish) ----------
+let bigSid=null;
+function openBig(sid){
+  const s=students.get(sid); if(!s) return;
+  bigSid=sid; control.sid=null; control.active=false;
+  $("m_title").textContent = "Ekran — "+s.name;
+  $("m_mode").textContent = "faqat ko'rish";
+  $("m_hint").textContent = "Ikki marta bosilgan talaba ekrani. Boshqarish uchun oynani yopib, 🖱 Boshqarish tugmasidan foydalaning.";
+  $("m_img").src = s.shot||"";
+  $("m_img").classList.remove("ctl");
+  $("modal").classList.add("show");
+}
+
+// ---------- Masofadan boshqaruv ----------
+$("b_control").onclick = ()=>{
+  const ids=selArr();
+  if(ids.length!==1){ alert("Boshqarish uchun BITTA talabani belgilang."); return; }
+  openControl(ids[0]);
+};
+function openControl(sid){
+  const s=students.get(sid); if(!s) return;
+  bigSid=null; control.sid=sid; control.active=true;
+  send({type:"control_start", sid});
+  $("m_title").textContent = "Boshqaruv — "+s.name;
+  $("m_mode").textContent = "🖱 boshqarilyapti";
+  $("m_hint").textContent = "Sichqoncha va klaviatura shu rasm orqali talabaga uzatiladi. Yozish uchun avval rasm ustiga bosing.";
+  const img=$("m_img");
+  img.src = s.shot||"";
+  img.classList.add("ctl");
+  img.tabIndex=0;
+  $("modal").classList.add("show");
+  img.focus();
+}
+function norm(e){
+  const img=$("m_img"); const r=img.getBoundingClientRect();
+  return { x: Math.min(1,Math.max(0,(e.clientX-r.left)/r.width)),
+           y: Math.min(1,Math.max(0,(e.clientY-r.top)/r.height)) };
+}
+let lastMove=0;
+const mimg=$("m_img");
+mimg.addEventListener("mousemove", e=>{
+  if(!control.active) return;
+  const now=Date.now(); if(now-lastMove<40) return; lastMove=now;
+  const p=norm(e); send({type:"input", sid:control.sid, kind:"move", x:p.x, y:p.y});
+});
+mimg.addEventListener("mousedown", e=>{
+  if(!control.active) return; e.preventDefault(); mimg.focus();
+  const p=norm(e); send({type:"input", sid:control.sid, kind:"down", btn:e.button===2?"right":"left", x:p.x, y:p.y});
+});
+mimg.addEventListener("mouseup", e=>{
+  if(!control.active) return; e.preventDefault();
+  const p=norm(e); send({type:"input", sid:control.sid, kind:"up", btn:e.button===2?"right":"left", x:p.x, y:p.y});
+});
+mimg.addEventListener("contextmenu", e=> e.preventDefault());
+mimg.addEventListener("wheel", e=>{
+  if(!control.active) return; e.preventDefault();
+  send({type:"input", sid:control.sid, kind:"scroll", amount: e.deltaY<0? 120 : -120});
+},{passive:false});
+mimg.addEventListener("keydown", e=>{
+  if(!control.active) return; e.preventDefault();
+  send({type:"input", sid:control.sid, kind:"key", char: e.key.length===1? e.key : "", keysym: mapKey(e.key)});
+});
+function mapKey(k){
+  const m={Enter:"Return",Backspace:"BackSpace",Tab:"Tab"," ":"space",Escape:"Escape",
+    ArrowLeft:"Left",ArrowUp:"Up",ArrowRight:"Right",ArrowDown:"Down",Delete:"Delete",
+    Home:"Home",End:"End",PageUp:"Prior",PageDown:"Next"};
+  return m[k]||"";
+}
+$("m_close").onclick = closeModal;
+function closeModal(){
+  if(control.active && control.sid!=null) send({type:"control_stop", sid:control.sid});
+  control={sid:null,active:false}; bigSid=null;
+  $("modal").classList.remove("show"); $("m_img").src="";
+}
+
+// ---------- Chiqish / log / util ----------
+$("disc").onclick = ()=>{ if(ws) ws.close(); location.reload(); };
+function logline(t,warn){
+  const el=$("log"); const d=document.createElement("div");
+  d.className = warn?"warnln":""; d.textContent=`[${new Date().toLocaleTimeString()}] ${t}`;
+  el.appendChild(d); el.scrollTop=el.scrollHeight;
+}
+function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+let actx=null;
+function beep(){
+  try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    const o=actx.createOscillator(), g=actx.createGain();
+    o.connect(g); g.connect(actx.destination); o.frequency.value=1150; g.gain.value=.12;
+    o.start(); setTimeout(()=>o.stop(),230);
+  }catch(e){}
+}
+</script>
+</body>
+</html>
